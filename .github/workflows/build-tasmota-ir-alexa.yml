@@ -1,0 +1,25 @@
+name: Build tasmota-ir + Alexa
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Enable Hue/Alexa emulation in the IR build
+        run: |
+          sed -i '/^#ifdef FIRMWARE_IR/,/^#endif  \/\/ FIRMWARE_IR/{
+          /^#undef USE_EMULATION$/d
+          s|^#undef USE_EMULATION_HUE.*|#define USE_EMULATION_HUE|
+          }' tasmota/include/tasmota_configurations.h
+          grep -n "USE_EMULATION_HUE" tasmota/include/tasmota_configurations.h | head -3
+      - run: pip install platformio
+      - run: pio run -e tasmota-ir
+      - name: Show size
+        run: ls -l build_output/firmware/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tasmota-ir-alexa
+          path: build_output/firmware/tasmota-ir.bin*
